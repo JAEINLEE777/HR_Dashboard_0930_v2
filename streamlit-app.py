@@ -3,93 +3,103 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from textblob import TextBlob
-import nltk
-from nltk.corpus import stopwords
-from wordcloud import WordCloud
 
-# NLTK 데이터 다운로드
-nltk.download('punkt')
-nltk.download('stopwords')
+# 데이터 로드
+@st.cache_data
+def load_data():
+    data = {
+        "참여하신 교육에 대한 만족도": ["보통", "보통", "매우 만족", "만족", "매우 만족", "매우 만족", "보통", "매우 만족", "만족", "매우 만족"],
+        "강사에 대한 만족도": ["매우 만족", "매우 만족", "보통", "보통", "만족", "매우 만족", "보통", "만족", "매우 만족", "만족"],
+        "교육이 본인의 업무, 연구, 학업에 도움이 되었는가": ["매우 도움이 되었다", "매우 도움이 되었다", "도움이 되었다", "도움이 되었다", "매우 도움이 되었다", "매우 도움이 되었다", "매우 도움이 되었다", "보통이다", "도움이 되었다", "매우 도움이 되었다"],
+        "교육을 동료 및 학생들에게 추천하시겠습니까": ["매우 그렇다", "그렇다", "그렇지 않다", "보통이다", "보통이다", "그렇지 않다", "매우 그렇다", "매우 그렇다", "보통이다", "그렇다"],
+        "재수강할 의사가 있습니까": ["매우 그렇다", "매우 그렇다", "매우 그렇다", "매우 그렇다", "보통이다", "보통이다", "그렇다", "그렇다", "매우 그렇다", "그렇다"],
+        "만족스러웠던 점": [
+            "Obsidian을 사용한 연결 노트 관리 방법이 혁신적이었습니다.",
+            "실제 업무에서 바로 활용 가능한 기술을 배울 수 있었습니다.",
+            "구체적이고 실습 위주의 교육이 매우 인상적이었습니다.",
+            "Obsidian을 사용한 연결 노트 관리 방법이 혁신적이었습니다.",
+            "Obsidian을 사용한 연결 노트 관리 방법이 혁신적이었습니다.",
+            "Obsidian을 사용한 연결 노트 관리 방법이 혁신적이었습니다.",
+            "개인 지식 관리를 체계적으로 할 수 있는 새로운 방법을 알게 되어 좋았습니다.",
+            "오랫동안 찾고 있던 개인 지식 관리 방법을 알게 되어 매우 만족했습니다.",
+            "실제 업무에서 바로 활용 가능한 기술을 배울 수 있었습니다.",
+            "강사님의 실습 중심 설명 덕분에 쉽게 이해할 수 있었습니다."
+        ],
+        "성별": ["여성", "여성", "남성", "여성", "여성", "남성", "여성", "남성", "남성", "여성"],
+        "연령": [38, 31, 29, 40, 42, 48, 39, 49, 28, 49],
+        "부서": ["관리부", "영업부", "마케팅부", "인사부", "기술개발부", "기술개발부", "마케팅부", "관리부", "마케팅부", "관리부"]
+    }
+    return pd.DataFrame(data)
 
-# 한국어 감정 분석을 위한 함수
-def analyze_sentiment_ko(text):
-    # 여기에 한국어 감정 분석 로직을 구현해야 합니다.
-    # 예시로 간단한 키워드 기반 감정 분석을 수행합니다.
-    positive_words = ['만족', '좋았', '유익', '도움']
-    negative_words = ['불만', '어려웠', '부족']
-    
-    score = sum([1 for word in positive_words if word in text]) - \
-            sum([1 for word in negative_words if word in text])
-    
-    if score > 0:
-        return 'Positive'
-    elif score < 0:
-        return 'Negative'
-    else:
-        return 'Neutral'
+def main():
+    st.title('교육 만족도 서베이 분석 앱')
 
-# 앱 제목
-st.title('교육 만족도 서베이 분석')
+    df = load_data()
 
-# 파일 업로더
-uploaded_file = st.file_uploader("CSV 파일을 업로드하세요", type="csv")
-
-if uploaded_file is not None:
-    # 데이터 로드
-    df = pd.read_csv(uploaded_file)
-    
-    # 데이터 미리보기
     st.subheader('데이터 미리보기')
     st.write(df.head())
-    
-    # 만족도 관련 수치 데이터 시각화
-    st.subheader('만족도 분석')
-    
-    # 교육 만족도
+
+    # 정량적 데이터 시각화
+    st.subheader('정량적 데이터 시각화')
+    columns = ['참여하신 교육에 대한 만족도', '강사에 대한 만족도', '교육이 본인의 업무, 연구, 학업에 도움이 되었는가', 
+               '교육을 동료 및 학생들에게 추천하시겠습니까', '재수강할 의사가 있습니까']
+    selected_column = st.selectbox('시각화할 열을 선택하세요:', columns)
+
     fig, ax = plt.subplots(figsize=(10, 6))
-    df['참여하신 교육에 대한 만족도'].value_counts().plot(kind='bar', ax=ax)
-    plt.title('교육에 대한 만족도')
-    plt.xlabel('만족도')
-    plt.ylabel('응답 수')
-    st.pyplot(fig)
-    
-    # 강사 만족도
-    fig, ax = plt.subplots(figsize=(10, 6))
-    df['강사에 대한 만족도'].value_counts().plot(kind='bar', ax=ax)
-    plt.title('강사에 대한 만족도')
-    plt.xlabel('만족도')
-    plt.ylabel('응답 수')
-    st.pyplot(fig)
-    
-    # 업무 도움 정도
-    fig, ax = plt.subplots(figsize=(10, 6))
-    df['교육이 본인의 업무, 연구, 학업에 도움이 되었는가'].value_counts().plot(kind='bar', ax=ax)
-    plt.title('업무/연구/학업에 대한 도움 정도')
-    plt.xlabel('도움 정도')
-    plt.ylabel('응답 수')
-    st.pyplot(fig)
-    
-    # 텍스트 데이터 감정 분석
-    st.subheader('만족스러웠던 점 감정 분석')
-    
-    # 감정 분석 수행
-    df['sentiment'] = df['만족스러웠던 점'].apply(analyze_sentiment_ko)
-    
-    # 감정 분석 결과 시각화
-    fig, ax = plt.subplots(figsize=(10, 6))
-    df['sentiment'].value_counts().plot(kind='pie', autopct='%1.1f%%', ax=ax)
-    plt.title('만족스러웠던 점에 대한 감정 분석')
-    st.pyplot(fig)
-    
-    # 워드클라우드 생성
-    st.subheader('만족스러웠던 점 워드클라우드')
-    text = ' '.join(df['만족스러웠던 점'])
-    wordcloud = WordCloud(width=800, height=400, background_color='white', font_path='/usr/share/fonts/truetype/nanum/NanumGothic.ttf').generate(text)
-    
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.imshow(wordcloud, interpolation='bilinear')
-    ax.axis('off')
+    df[selected_column].value_counts().plot(kind='bar', ax=ax)
+    plt.title(f'{selected_column} 분포')
+    plt.xlabel('응답')
+    plt.ylabel('빈도')
     st.pyplot(fig)
 
-else:
-    st.info('CSV 파일을 업로드해주세요.')
+    # 성별에 따른 만족도 분석
+    st.subheader('성별에 따른 만족도 분석')
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.boxplot(x='성별', y='참여하신 교육에 대한 만족도', data=df, ax=ax)
+    plt.title('성별에 따른 교육 만족도')
+    st.pyplot(fig)
+
+    # 연령대에 따른 만족도 분석
+    st.subheader('연령대에 따른 만족도 분석')
+    df['연령대'] = pd.cut(df['연령'], bins=[20, 30, 40, 50, 60], labels=['20대', '30대', '40대', '50대'])
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.boxplot(x='연령대', y='참여하신 교육에 대한 만족도', data=df, ax=ax)
+    plt.title('연령대에 따른 교육 만족도')
+    st.pyplot(fig)
+
+    # 부서별 만족도 분석
+    st.subheader('부서별 만족도 분석')
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.boxplot(x='부서', y='참여하신 교육에 대한 만족도', data=df, ax=ax)
+    plt.title('부서별 교육 만족도')
+    plt.xticks(rotation=45)
+    st.pyplot(fig)
+
+    # 텍스트 데이터 감정 분석
+    st.subheader('텍스트 데이터 감정 분석')
+    
+    def analyze_sentiment(text):
+        return TextBlob(text).sentiment.polarity
+
+    df['sentiment'] = df['만족스러웠던 점'].apply(analyze_sentiment)
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.histplot(df['sentiment'], kde=True, ax=ax)
+    plt.title('감정 분석 결과')
+    plt.xlabel('감정 점수')
+    plt.ylabel('빈도')
+    st.pyplot(fig)
+    
+    # 긍정적/부정적 응답 표시
+    st.subheader('응답 예시')
+    positive_responses = df[df['sentiment'] > 0]['만족스러웠던 점'].head()
+    negative_responses = df[df['sentiment'] < 0]['만족스러웠던 점'].head()
+    
+    st.write('긍정적인 응답 예시:')
+    st.write(positive_responses)
+    
+    st.write('부정적인 응답 예시:')
+    st.write(negative_responses)
+
+if __name__ == "__main__":
+    main()
